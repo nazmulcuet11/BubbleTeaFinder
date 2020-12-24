@@ -77,6 +77,7 @@ class FilterViewController: UITableViewController {
     populateCheapVenueCountLabel()
     populateModerateVenueCountLabel()
     populateExpensiveVenueCountLabel()
+    populateDealsCountLabel()
   }
 }
 
@@ -120,6 +121,42 @@ extension FilterViewController {
       let count = try coredataStack.managedContext.count(for: fetchRequest)
       let pluralized = count == 1 ? "place" : "places"
       thirdPriceCategoryLabel.text = "\(count) bubble tea \(pluralized)"
+    } catch let error as NSError {
+      print("Fetch error: \(error), userInfo: \(error.userInfo)")
+    }
+  }
+
+  func populateDealsCountLabel() {
+    let specialCountKeyPathExp = NSExpression(forKeyPath: #keyPath(Venue.specialCount))
+    let sumExpression = NSExpression(forFunction: "sum:", arguments: [specialCountKeyPathExp])
+
+    let sumExpressionDesc = NSExpressionDescription()
+    sumExpressionDesc.name = "sumDeals"
+    sumExpressionDesc.expression = sumExpression
+    sumExpressionDesc.expressionResultType = .integer32AttributeType
+
+
+    // count does not need any specific colulm but NSExpression(forFunction:arguments:)
+    // expects at least one argument in its arguments list
+//    let countExpression = NSExpression(forFunction: "count:", arguments: [specialCountKeyPathExp])
+
+//    let countExpressionDesc = NSExpressionDescription()
+//    countExpressionDesc.name = "countVenue"
+//    countExpressionDesc.expression = countExpression
+//    countExpressionDesc.expressionResultType = .integer32AttributeType
+
+    let fetchRequest = NSFetchRequest<NSDictionary>(entityName: "Venue")
+    fetchRequest.resultType = .dictionaryResultType
+//    fetchRequest.propertiesToFetch = [sumExpressionDesc, countExpressionDesc]
+    fetchRequest.propertiesToFetch = [sumExpressionDesc]
+
+    do {
+      let results = try coredataStack.managedContext.fetch(fetchRequest)
+      let resultDict = results.first!
+      let numDeals = resultDict["sumDeals"] as! Int
+//      let numVenue = resultDict["countVenue"] as! Int
+      let pluralized = numDeals == 1 ? "deal" : "deals"
+      numDealsLabel.text = "\(numDeals) \(pluralized)"
     } catch let error as NSError {
       print("Fetch error: \(error), userInfo: \(error.userInfo)")
     }
