@@ -65,6 +65,23 @@ class FilterViewController: UITableViewController {
   var selectedPredicate: NSPredicate?
   var selectedSortDescriptor: NSSortDescriptor?
 
+  var allCell: [UITableViewCell] {
+    return [
+      cheapVenueCell,
+      moderateVenueCell,
+      expensiveVenueCell,
+
+      offeringDealCell,
+      walkingDistanceCell,
+      userTipsCell,
+
+      nameAZSortCell,
+      nameZASortCell,
+      distanceSortCell,
+      priceSortCell
+    ]
+  }
+
   lazy var cheapVenuePredicate: NSPredicate = {
     return NSPredicate(format: "%K == %@", #keyPath(Venue.priceInfo.priceCategory), "$")
   }()
@@ -75,6 +92,18 @@ class FilterViewController: UITableViewController {
 
   lazy var expensiveVenuePredicate: NSPredicate = {
     return NSPredicate(format: "%K == %@", #keyPath(Venue.priceInfo.priceCategory), "$$$")
+  }()
+
+  lazy var offeringDealPredicate: NSPredicate = {
+    return NSPredicate(format: "%K > 0", #keyPath(Venue.specialCount))
+  }()
+
+  lazy var walkingDistancePredicate: NSPredicate = {
+    return NSPredicate(format: "%K < 500", #keyPath(Venue.location.distance))
+  }()
+
+  lazy var hasTipsPredicate: NSPredicate = {
+    return NSPredicate(format: "%K > 0", #keyPath(Venue.stats.tipCount))
   }()
 
   // MARK: - View Life Cycle
@@ -170,9 +199,9 @@ extension FilterViewController {
   }
 
   func deselectAll() {
-    cheapVenueCell.accessoryType = .none
-    moderateVenueCell.accessoryType = .none
-    expensiveVenueCell.accessoryType = .none
+    for cell in allCell {
+      cell.accessoryType = .none
+    }
   }
 }
 
@@ -193,12 +222,21 @@ extension FilterViewController {
     }
 
     switch cell {
+    // price section
     case cheapVenueCell:
       selectedPredicate = cheapVenuePredicate
     case moderateVenueCell:
       selectedPredicate = moderateVenuePredicate
     case expensiveVenueCell:
       selectedPredicate = expensiveVenuePredicate
+
+    // most popular section
+    case offeringDealCell:
+      selectedPredicate = offeringDealPredicate
+    case walkingDistanceCell:
+      selectedPredicate = walkingDistancePredicate
+    case userTipsCell:
+      selectedPredicate = hasTipsPredicate
     default:
       break
     }
