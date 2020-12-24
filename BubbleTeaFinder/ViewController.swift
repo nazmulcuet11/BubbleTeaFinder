@@ -39,6 +39,8 @@ class ViewController: UIViewController {
   private let venueCellIdentifier = "VenueCell"
 
   lazy var coreDataStack = CoreDataStack(modelName: "BubbleTeaFinder")
+  var fetchRequest: NSFetchRequest<Venue>?
+  var venues = [Venue]()
 
   // MARK: - IBOutlets
   @IBOutlet weak var tableView: UITableView!
@@ -48,6 +50,15 @@ class ViewController: UIViewController {
     super.viewDidLoad()
 
     importJSONSeedDataIfNeeded()
+
+    guard let model = coreDataStack.managedContext.persistentStoreCoordinator?.managedObjectModel,
+          let fetchRequest = model.fetchRequestTemplate(forName: "FETCH_ALL_VENUE") as? NSFetchRequest<Venue>
+    else {
+      return
+    }
+
+    self.fetchRequest = fetchRequest
+    fetchAndReload()
   }
 
   // MARK: - Navigation
@@ -63,16 +74,33 @@ extension ViewController {
   }
 }
 
+extension ViewController {
+  func fetchAndReload() {
+    guard let fetchRequest = fetchRequest
+    else {
+      return
+    }
+
+    do {
+      venues = try coreDataStack.managedContext.fetch(fetchRequest)
+      tableView.reloadData()
+    } catch let error as NSError {
+      print("Fetch error: \(error), userInfo: \(error.userInfo)")
+    }
+  }
+}
+
 // MARK: - UITableViewDataSource
 extension ViewController: UITableViewDataSource {
   func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-    10
+    return venues.count
   }
 
   func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
     let cell = tableView.dequeueReusableCell(withIdentifier: venueCellIdentifier, for: indexPath)
-    cell.textLabel?.text = "Bubble Tea Venue"
-    cell.detailTextLabel?.text = "Price Info"
+    let venue = venues[indexPath.row]
+    cell.textLabel?.text = venue.name
+    cell.detailTextLabel?.text = venue.priceInfo?.priceCategory
     return cell
   }
 }
