@@ -33,6 +33,10 @@
 import UIKit
 import CoreData
 
+protocol FilterViewControllerDelegate: class {
+  func filterViewController(filter: FilterViewController, didSelectPredicate: NSPredicate?, sortDescriptor: NSSortDescriptor?)
+}
+
 class FilterViewController: UITableViewController {
   @IBOutlet weak var firstPriceCategoryLabel: UILabel!
   @IBOutlet weak var secondPriceCategoryLabel: UILabel!
@@ -57,6 +61,9 @@ class FilterViewController: UITableViewController {
 
   // MARK: - Properties
   var coredataStack: CoreDataStack!
+  weak var delegate: FilterViewControllerDelegate?
+  var selectedPredicate: NSPredicate?
+  var selectedSortDescriptor: NSSortDescriptor?
 
   lazy var cheapVenuePredicate: NSPredicate = {
     return NSPredicate(format: "%K == %@", #keyPath(Venue.priceInfo.priceCategory), "$")
@@ -161,18 +168,42 @@ extension FilterViewController {
       print("Fetch error: \(error), userInfo: \(error.userInfo)")
     }
   }
+
+  func deselectAll() {
+    cheapVenueCell.accessoryType = .none
+    moderateVenueCell.accessoryType = .none
+    expensiveVenueCell.accessoryType = .none
+  }
 }
 
 // MARK: - IBActions
 extension FilterViewController {
   @IBAction func search(_ sender: UIBarButtonItem) {
-    // Add code here
+    delegate?.filterViewController(filter: self, didSelectPredicate: selectedPredicate, sortDescriptor: selectedSortDescriptor)
+    dismiss(animated: true, completion: nil)
   }
 }
 
 // MARK: - UITableViewDelegate
 extension FilterViewController {
   override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-    // Add code here
+    guard let cell = tableView.cellForRow(at: indexPath)
+    else {
+      return
+    }
+
+    switch cell {
+    case cheapVenueCell:
+      selectedPredicate = cheapVenuePredicate
+    case moderateVenueCell:
+      selectedPredicate = moderateVenuePredicate
+    case expensiveVenueCell:
+      selectedPredicate = expensiveVenuePredicate
+    default:
+      break
+    }
+
+    deselectAll()
+    cell.accessoryType = .checkmark
   }
 }
