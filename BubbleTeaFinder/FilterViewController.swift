@@ -65,7 +65,7 @@ class FilterViewController: UITableViewController {
   var selectedPredicate: NSPredicate?
   var selectedSortDescriptor: NSSortDescriptor?
 
-  var allCell: [UITableViewCell] {
+  var filterCells: [UITableViewCell] {
     return [
       cheapVenueCell,
       moderateVenueCell,
@@ -73,13 +73,21 @@ class FilterViewController: UITableViewController {
 
       offeringDealCell,
       walkingDistanceCell,
-      userTipsCell,
+      userTipsCell
+    ]
+  }
 
+  var sortCells: [UITableViewCell] {
+    return [
       nameAZSortCell,
       nameZASortCell,
       distanceSortCell,
       priceSortCell
     ]
+  }
+
+  var allCell: [UITableViewCell] {
+    return filterCells + sortCells
   }
 
   lazy var cheapVenuePredicate: NSPredicate = {
@@ -104,6 +112,29 @@ class FilterViewController: UITableViewController {
 
   lazy var hasTipsPredicate: NSPredicate = {
     return NSPredicate(format: "%K > 0", #keyPath(Venue.stats.tipCount))
+  }()
+
+  lazy var nameSortDescriptor: NSSortDescriptor = {
+    let compareSelector = #selector(NSString.localizedStandardCompare(_:))
+    return NSSortDescriptor(
+      key: #keyPath(Venue.name),
+      ascending: true,
+      selector: compareSelector
+    )
+  }()
+
+  lazy var distanceSortDescriptor: NSSortDescriptor = {
+    return NSSortDescriptor(
+      key: #keyPath(Venue.location.distance),
+      ascending: true
+    )
+  }()
+
+  lazy var priceSortDescriptor: NSSortDescriptor = {
+    return NSSortDescriptor(
+      key: #keyPath(Venue.priceInfo.priceCategory),
+      ascending: true
+    )
   }()
 
   // MARK: - View Life Cycle
@@ -198,8 +229,14 @@ extension FilterViewController {
     }
   }
 
-  func deselectAll() {
-    for cell in allCell {
+  func deselectAllFilterCell() {
+    for cell in filterCells {
+      cell.accessoryType = .none
+    }
+  }
+
+  func deselectAllSortCells() {
+    for cell in sortCells {
       cell.accessoryType = .none
     }
   }
@@ -237,11 +274,26 @@ extension FilterViewController {
       selectedPredicate = walkingDistancePredicate
     case userTipsCell:
       selectedPredicate = hasTipsPredicate
+
+    // sort by section
+    case nameAZSortCell:
+      selectedSortDescriptor = nameSortDescriptor
+    case nameZASortCell:
+      selectedSortDescriptor = nameSortDescriptor.reversedSortDescriptor as? NSSortDescriptor
+    case distanceSortCell:
+      selectedSortDescriptor = distanceSortDescriptor
+    case priceSortCell:
+      selectedSortDescriptor = priceSortDescriptor
     default:
       break
     }
 
-    deselectAll()
+    if filterCells.contains(cell) {
+      deselectAllFilterCell()
+    } else if sortCells.contains(cell) {
+      deselectAllSortCells()
+    }
+
     cell.accessoryType = .checkmark
   }
 }
