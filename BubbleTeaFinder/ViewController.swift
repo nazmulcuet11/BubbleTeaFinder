@@ -40,6 +40,7 @@ class ViewController: UIViewController {
 
   lazy var coreDataStack = CoreDataStack(modelName: "BubbleTeaFinder")
   var fetchRequest: NSFetchRequest<Venue>?
+  var asyncFetchRequest: NSAsynchronousFetchRequest<Venue>?
   var venues = [Venue]()
 
   // MARK: - IBOutlets
@@ -60,7 +61,19 @@ class ViewController: UIViewController {
 //
 //    self.fetchRequest = fetchRequest
 
-    self.fetchRequest = Venue.fetchRequest()
+    let venuFetchRequest: NSFetchRequest<Venue> = Venue.fetchRequest()
+    self.fetchRequest = venuFetchRequest
+    self.asyncFetchRequest = NSAsynchronousFetchRequest<Venue>(fetchRequest: venuFetchRequest, completionBlock: {
+      [unowned self] (result: NSAsynchronousFetchResult) in
+
+      guard let venues = result.finalResult
+      else {
+        return
+      }
+
+      self.venues = venues
+      self.tableView.reloadData()
+    })
 
     fetchAndReload()
   }
@@ -87,14 +100,25 @@ extension ViewController {
 
 extension ViewController {
   func fetchAndReload() {
-    guard let fetchRequest = fetchRequest
+//    guard let fetchRequest = fetchRequest
+//    else {
+//      return
+//    }
+
+//    do {
+//      venues = try coreDataStack.managedContext.fetch(fetchRequest)
+//      tableView.reloadData()
+//    } catch let error as NSError {
+//      print("Fetch error: \(error), userInfo: \(error.userInfo)")
+//    }
+
+    guard let asyncFetchRequest = asyncFetchRequest
     else {
       return
     }
 
     do {
-      venues = try coreDataStack.managedContext.fetch(fetchRequest)
-      tableView.reloadData()
+      try coreDataStack.managedContext.execute(asyncFetchRequest)
     } catch let error as NSError {
       print("Fetch error: \(error), userInfo: \(error.userInfo)")
     }
