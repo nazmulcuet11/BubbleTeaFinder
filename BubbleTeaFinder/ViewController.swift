@@ -52,6 +52,18 @@ class ViewController: UIViewController {
 
     importJSONSeedDataIfNeeded()
 
+    let batchUpdate = NSBatchUpdateRequest(entityName: "Venue")
+    batchUpdate.propertiesToUpdate = [#keyPath(Venue.favorite): true]
+    batchUpdate.resultType = .updatedObjectsCountResultType
+    batchUpdate.affectedStores = coreDataStack.managedContext.persistentStoreCoordinator?.persistentStores
+
+    do {
+      let batchResult = try coreDataStack.managedContext.execute(batchUpdate) as! NSBatchUpdateResult
+      print("Updated \(batchResult.result!) records")
+    } catch let error as NSError {
+      print("Update error: \(error), userInfo: \(error.userInfo)")
+    }
+
       // Fetch request created from template can not be modified at run time
 //    guard let model = coreDataStack.managedContext.persistentStoreCoordinator?.managedObjectModel,
 //          let fetchRequest = model.fetchRequestTemplate(forName: "FETCH_ALL_VENUE") as? NSFetchRequest<Venue>
